@@ -1,5 +1,5 @@
 import asyncio
-
+import os
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from google import genai
@@ -89,8 +89,6 @@ async def websocket_endpoint(websocket: WebSocket, client_name: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run(
-        app,
-        host="10.14.78.45",
-        port=8080,
-    )
+        port = int(os.environ.get("PORT", 8080))
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    
