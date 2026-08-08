@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Varta Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Join Box -->
+    <div id="loginBox" class="card">
+        <h2>💬 Varta Chat</h2>
+        <input id="nameInput" placeholder="Enter your name">
+        <button onclick="join()">Join Chat</button>
+    </div>
+
+    <!-- Chat Box -->
+    <div id="chatBox" class="card hidden">
+        <div id="messages"></div>
+        <div class="input-row">
+            <input id="msgInput" placeholder="Message" onkeydown="if(event.key==='Enter') send()">
+            <button onclick="send()">Send</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
