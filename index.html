@@ -2,85 +2,49 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VARTA // VICE CITY</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Varta Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Ambient Vice City Glow Background -->
-    <div class="glow-orb orb-pink"></div>
-    <div class="glow-orb orb-cyan"></div>
-    <div class="glow-orb orb-orange"></div>
 
-    <!-- Login Screen -->
-    <div id="loginBox" class="gta-card">
-        <div class="badge-tag">LEONIDA STATE</div>
-        <h1 class="gta-logo">VARTA <span class="vi-tag">VI</span></h1>
-        <p class="gta-subtitle">ENTER THE NETWORK</p>
-        
-        <div class="gta-input-group">
-            <input id="nameInput" type="text" placeholder="OPERATOR ALIAS..." maxlength="18" onkeydown="if(event.key==='Enter') join()">
-            <button class="gta-btn" onclick="join()">
-                CONNECT
-            </button>
+    <!-- Join Screen -->
+    <main id="loginBox" class="card login-card">
+        <div class="brand">
+            <span class="logo-icon">💬</span>
+            <h2>Varta Chat</h2>
+            <p>Simple, aesthetic realtime messaging</p>
         </div>
-    </div>
+        <form id="joinForm" onsubmit="handleJoin(event)">
+            <input id="nameInput" type="text" placeholder="Enter your display name" required autocomplete="off">
+            <button type="submit" class="btn-primary">Join Room</button>
+        </form>
+    </main>
 
-    <!-- Main Chat Workspace -->
-    <div id="chatBox" class="gta-app hidden">
-        <!-- Sidebar -->
-        <aside class="gta-sidebar">
-            <div class="sidebar-top">
-                <div class="gta-logo small">VARTA <span class="vi-tag">VI</span></div>
-                <div class="location-badge">🌴 VICE CITY</div>
-            </div>
-
-            <div class="channel-section">
-                <div class="section-label">FREQUENCY</div>
-                <div class="channel-pill active">
-                    <span class="freq-icon">⚡</span> GLOBAL_CHAT
+    <!-- Main Chat Room -->
+    <main id="chatBox" class="card chat-card hidden">
+        <header class="chat-header">
+            <div class="room-info">
+                <span id="statusDot" class="status-dot"></span>
+                <div>
+                    <h3>Varta Workspace</h3>
+                    <span id="statusText" class="status-sub">Connecting...</span>
                 </div>
             </div>
+        </header>
 
-            <div class="channel-section">
-                <div class="section-label">INTELLIGENCE</div>
-                <div class="channel-pill ai-pill">
-                    <span class="ai-spark">🤖</span> @gemini
-                </div>
-            </div>
+        <!-- Message Feed -->
+        <div id="messages" class="messages-area"></div>
 
-            <!-- Current User Badge -->
-            <div class="my-profile">
-                <div id="myAvatar" class="gta-avatar">VI</div>
-                <div class="my-info">
-                    <span id="myUsername" class="my-name">PLAYER</span>
-                    <span class="online-tag">ONLINE</span>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Feed -->
-        <main class="gta-viewport">
-            <header class="gta-header">
-                <div class="header-title">
-                    <span class="status-indicator"></span>
-                    <h2># GLOBAL_FREQUENCY</h2>
-                </div>
-                <div class="header-info">LIVE TRANSMISSION</div>
-            </header>
-
-            <div id="messages" class="gta-feed"></div>
-
-            <div class="gta-composer">
-                <div class="input-wrapper">
-                    <input id="msgInput" type="text" placeholder="Type a message or trigger @gemini..." onkeydown="if(event.key==='Enter') send()">
-                    <button class="gta-send-btn" onclick="send()">
-                        SEND ➔
-                    </button>
-                </div>
-            </div>
-        </main>
-    </div>
+        <!-- Chat Input Form -->
+        <form id="chatForm" class="input-form" onsubmit="handleSend(event)">
+            <input id="msgInput" type="text" placeholder="Type a message or @gemini..." autocomplete="off">
+            <button type="submit" id="sendBtn" class="btn-send">Send</button>
+        </form>
+    </main>
 
     <script src="script.js"></script>
 </body>

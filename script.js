@@ -1,104 +1,154 @@
-let ws, name;
+let ws = null;
+let currentUser = "";
 
-// Handcrafted Vice City Neon Palette
-const vicePalette = [
-    "#ff2a8d", // Hot Pink
-    "#00f0ff", // Electric Cyan
-    "#ff7e33", // Sunset Orange
-    "#ffe600", // Neon Yellow
-    "#a855f7", // Vice Purple
-    "#34d399", // Tropical Mint
-    "#ff5252"  // Neon Coral
-];
-
-function getUserColor(username) {
+// Dynamic pastel theme generator per user
+function getUserTheme(name) {
     let hash = 0;
-    for (let i = 0; i < username.length; i++) {
-        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const index = Math.abs(hash % vicePalette.length);
-    return vicePalette[index];
+    const hue = Math.abs(hash) % 360;
+    return {
+        bg: `hsl(${hue}, 80%, 94%)`,
+        border: `hsl(${hue}, 60%, 82%)`,
+        text: `hsl(${hue}, 80%, 18%)`,
+        author: `hsl(${hue}, 80%, 30%)`
+    };
 }
 
-function getInitials(username) {
-    if (!username) return "VI";
-    return username.trim().substring(0, 2).toUpperCase();
-}
+function handleJoin(event) {
+    if (event) event.preventDefault();
+    
+    currentUser = document.getElementById("nameInput").value.trim();
+    if (!currentUser) return;
 
-function join() {
-    name = document.getElementById("nameInput").value.trim();
-    if (!name) return;
+    // Fallback host if page is served locally or without hostname
+    let host = location.host;
+    if (!host || host === "") {
+        host = "localhost:8080";
+    }
 
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    ws = new WebSocket(`${proto}//${location.host}/ws/${encodeURIComponent(name)}`);
+    const wsUrl = `${proto}//${host}/ws/${encodeURIComponent(currentUser)}`;
 
-    // Set sidebar user details
-    document.getElementById("myUsername").textContent = name.toUpperCase();
-    const avatarEl = document.getElementById("myAvatar");
-    avatarEl.textContent = getInitials(name);
-    avatarEl.style.backgroundColor = getUserColor(name);
-    avatarEl.style.boxShadow = `0 0 12px ${getUserColor(name)}`;
+    try {
+        ws = new WebSocket(wsUrl);
+    } catch (err) {
+        alert("Could not create WebSocket connection: " + err.message);
+        return;
+    }
+
+    ws.onopen = () => {
+        document.getElementById("statusText").textContent = "Online";
+        document.getElementById("statusDot").classList.remove("disconnected");
+    };
 
     ws.onmessage = (e) => {
         const feed = document.getElementById("messages");
-        const rawText = e.data;
-        
-        const row = document.createElement("div");
-        row.className = "msg-row";
+        const raw = e.data;
 
-        // 1. System notices (Broadcasts, Join/Leave)
-        if (rawText.startsWith("📢") || rawText.startsWith("❌") || rawText.includes("thinking") || rawText.startsWith("⚠️")) {
-            row.className = "msg-row system-row";
-            row.innerHTML = `<div class="system-pill">${rawText}</div>`;
-        } 
-        // 2. Gemini AI response
-        else if (rawText.startsWith("🤖 Gemini:")) {
-            row.className = "msg-row ai-row";
-            const content = rawText.replace("🤖 Gemini:", "").trim();
-            
-            row.innerHTML = `
-                <div class="gta-avatar" style="background: linear-gradient(135deg, #ff2a8d, #7000ff); box-shadow: 0 0 12px #ff2a8d;">AI</div>
-                <div class="msg-body">
-                    <span class="msg-author" style="color: #ff2a8d; text-shadow: 0 0 8px rgba(255,42,141,0.5);">🤖 GEMINI_AI</span>
-                    <div class="msg-bubble">${content}</div>
-                </div>
-            `;
-        } 
-        // 3. User messages
+        // 1. System Notifications
+        if (raw.startsWith("📢") || raw.startsWith("❌") || raw.includes("thinking")) {
+            const sysDiv = document.createElement("div");
+            sysDiv.className = "msg-system";
+            sysDiv.textContent = raw;
+            feed.appendChild(sysDiv);
+        }
+        // 2. Sent by current user
+        else if (raw.startsWith(`${currentUser}:`)) {
+            const text = raw.substring(currentUser.length + 1).trim();
+            feed.appendChild(createMessageBubble("You", text, "mine"));
+        }
+        // 3. Sent by Gemini AI
+        else if (raw.startsWith("🤖 **Gemini**:") || raw.startsWith("🤖 Gemini:")) {
+            const text = raw.replace(/^🤖 (\*\*Gemini\*\*|Gemini):/, "").trim();
+            feed.appendChild(createMessageBubble("Gemini AI", text, "ai"));
+        }
+        // 4. Sent by other users
         else {
-            const splitIndex = rawText.indexOf(":");
-            if (splitIndex !== -1) {
-                const sender = rawText.substring(0, splitIndex).trim();
-                const text = rawText.substring(splitIndex + 1).trim();
-                const color = getUserColor(sender);
-                const initials = getInitials(sender);
-
-                row.innerHTML = `
-                    <div class="gta-avatar" style="background-color: ${color}; box-shadow: 0 0 10px ${color};">${initials}</div>
-                    <div class="msg-body">
-                        <span class="msg-author" style="color: ${color}; text-shadow: 0 0 6px ${color}88;">${sender.toUpperCase()}</span>
-                        <div class="msg-bubble">${text}</div>
-                    </div>
-                `;
-            } else {
-                row.className = "msg-row system-row";
-                row.innerHTML = `<div class="system-pill">${rawText}</div>`;
+            const colonIdx = raw.indexOf(":");
+            let author = "User";
+            let text = raw;
+            if (colonIdx !== -1) {
+                author = raw.substring(0, colonIdx).trim();
+                text = raw.substring(colonIdx + 1).trim();
             }
+            feed.appendChild(createMessageBubble(author, text, "others"));
         }
 
-        feed.appendChild(row);
         feed.scrollTop = feed.scrollHeight;
+    };
+
+    ws.onerror = (err) => {
+        const feed = document.getElementById("messages");
+        const sysDiv = document.createElement("div");
+        sysDiv.className = "msg-system";
+        sysDiv.textContent = "⚠️ Connection error. Make sure main.py is running.";
+        feed.appendChild(sysDiv);
+    };
+
+    ws.onclose = () => {
+        document.getElementById("statusText").textContent = "Disconnected";
+        document.getElementById("statusDot").classList.add("disconnected");
     };
 
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("chatBox").classList.remove("hidden");
+    
+    setTimeout(() => {
+        document.getElementById("msgInput").focus();
+    }, 100);
 }
 
-function send() {
+function handleSend(event) {
+    if (event) event.preventDefault();
+
     const input = document.getElementById("msgInput");
-    const val = input.value.trim();
-    if (val && ws) {
-        ws.send(val);
-        input.value = "";
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert("WebSocket is not connected. Check if your server (main.py) is running!");
+        return;
     }
+
+    ws.send(message);
+    input.value = "";
+    input.focus();
+}
+
+function createMessageBubble(sender, text, type) {
+    const wrapper = document.createElement("div");
+    wrapper.className = `msg-wrapper ${type}`;
+
+    if (type !== "mine") {
+        const authorLabel = document.createElement("span");
+        authorLabel.className = "msg-author";
+        authorLabel.textContent = sender;
+
+        if (type === "others") {
+            const theme = getUserTheme(sender);
+            authorLabel.style.color = theme.author;
+        } else if (type === "ai") {
+            authorLabel.style.color = "#7e22ce";
+        }
+        wrapper.appendChild(authorLabel);
+    }
+
+    const bubble = document.createElement("div");
+    bubble.className = "msg-bubble";
+    bubble.textContent = text;
+
+    if (type === "others") {
+        const theme = getUserTheme(sender);
+        bubble.style.backgroundColor = theme.bg;
+        bubble.style.borderColor = theme.border;
+        bubble.style.border = `1px solid ${theme.border}`;
+        bubble.style.color = theme.text;
+        bubble.style.borderBottomLeftRadius = "4px";
+    }
+
+    wrapper.appendChild(bubble);
+    return wrapper;
 }
