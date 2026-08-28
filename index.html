@@ -3,40 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Varta | Next-Gen Chat</title>
+    <title>Varta Workspaces</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-    <div class="bg-shape shape-3"></div>
-
-    <div id="loginBox" class="glass-panel">
-        <div class="logo">✨ Varta</div>
-        <p class="subtitle">Enter the conversation</p>
-        <div class="input-group">
-            <input id="nameInput" type="text" placeholder="Choose a username..." onkeydown="if(event.key==='Enter') join()">
-            <button onclick="join()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
+    <!-- Join / Auth Modal -->
+    <div id="loginBox" class="modal-overlay">
+        <div class="card login-card">
+            <div class="brand">
+                <div class="brand-icon">💬</div>
+                <h1>Welcome to Varta</h1>
+                <p>Enter your display name to join the workspace</p>
+            </div>
+            <div class="form-group">
+                <input id="nameInput" type="text" placeholder="e.g. Alex" maxlength="20" onkeydown="if(event.key==='Enter') join()">
+                <button class="btn btn-primary" onclick="join()">Join Workspace</button>
+            </div>
         </div>
     </div>
 
-    <div id="chatBox" class="glass-panel hidden">
-        <div class="chat-header">
-            <div class="logo small">✨ Varta</div>
-            <div class="status">Live</div>
-        </div>
-        
-        <div id="messages">
+    <!-- Main Workspace App -->
+    <div id="chatBox" class="app-layout hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="workspace-icon">⚡</span>
+                <span class="workspace-name">Varta Team</span>
             </div>
-        
-        <div class="chat-input-area">
-            <input id="msgInput" type="text" placeholder="Type a message or @gemini..." onkeydown="if(event.key==='Enter') send()">
-            <button class="send-btn" onclick="send()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-            </button>
-        </div>
+            
+            <div class="sidebar-menu">
+                <div class="menu-section">
+                    <span class="section-title">CHANNELS</span>
+                    <div class="channel-item active">
+                        <span class="hashtag">#</span> general
+                    </div>
+                </div>
+
+                <div class="menu-section">
+                    <span class="section-title">INTEGRATIONS</span>
+                    <div class="channel-item ai-item">
+                        <span class="ai-badge">AI</span> @gemini
+                    </div>
+                </div>
+            </div>
+
+            <div class="user-profile-bar">
+                <div id="myAvatar" class="avatar small">U</div>
+                <div class="user-details">
+                    <span id="myUsername" class="user-name">User</span>
+                    <span class="user-status"><span class="status-dot"></span> Online</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Container -->
+        <main class="chat-viewport">
+            <header class="top-bar">
+                <div class="channel-info">
+                    <span class="hashtag">#</span>
+                    <h2>general</h2>
+                    <span class="divider"></span>
+                    <span class="channel-topic">Official team chat room. Mention @gemini for AI answers.</span>
+                </div>
+            </header>
+
+            <div id="messages" class="message-feed"></div>
+
+            <div class="composer-container">
+                <div class="input-bar">
+                    <input id="msgInput" type="text" placeholder="Message #general (use @gemini for AI assistance)..." onkeydown="if(event.key==='Enter') send()">
+                    <button class="send-btn" onclick="send()" title="Send">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script src="script.js"></script>
