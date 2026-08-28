@@ -1,43 +1,43 @@
 let ws, name;
 
-// Helper to calculate avatar color from username string hash
+// Handcrafted Vice City Neon Palette
+const vicePalette = [
+    "#ff2a8d", // Hot Pink
+    "#00f0ff", // Electric Cyan
+    "#ff7e33", // Sunset Orange
+    "#ffe600", // Neon Yellow
+    "#a855f7", // Vice Purple
+    "#34d399", // Tropical Mint
+    "#ff5252"  // Neon Coral
+];
+
 function getUserColor(username) {
     let hash = 0;
     for (let i = 0; i < username.length; i++) {
         hash = username.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const hue = Math.abs(hash % 360);
-    return `hsl(${hue}, 60%, 50%)`;
+    const index = Math.abs(hash % vicePalette.length);
+    return vicePalette[index];
 }
 
-// Helper to get 1-2 uppercase initials
 function getInitials(username) {
-    if (!username) return "?";
-    const parts = username.trim().split(" ");
-    if (parts.length >= 2) {
-        return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return username.substring(0, 2).toUpperCase();
-}
-
-// Current timestamp formatting (e.g., 10:42 AM)
-function getFormattedTime() {
-    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (!username) return "VI";
+    return username.trim().substring(0, 2).toUpperCase();
 }
 
 function join() {
     name = document.getElementById("nameInput").value.trim();
     if (!name) return;
 
-    // Connect via protocol
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     ws = new WebSocket(`${proto}//${location.host}/ws/${encodeURIComponent(name)}`);
 
-    // Populate user profile info in the sidebar
-    document.getElementById("myUsername").textContent = name;
+    // Set sidebar user details
+    document.getElementById("myUsername").textContent = name.toUpperCase();
     const avatarEl = document.getElementById("myAvatar");
     avatarEl.textContent = getInitials(name);
     avatarEl.style.backgroundColor = getUserColor(name);
+    avatarEl.style.boxShadow = `0 0 12px ${getUserColor(name)}`;
 
     ws.onmessage = (e) => {
         const feed = document.getElementById("messages");
@@ -46,28 +46,25 @@ function join() {
         const row = document.createElement("div");
         row.className = "msg-row";
 
-        // 1. System Notices
+        // 1. System notices (Broadcasts, Join/Leave)
         if (rawText.startsWith("📢") || rawText.startsWith("❌") || rawText.includes("thinking") || rawText.startsWith("⚠️")) {
-            row.classList.add("system-msg");
+            row.className = "msg-row system-row";
             row.innerHTML = `<div class="system-pill">${rawText}</div>`;
         } 
-        // 2. Gemini AI Messages
+        // 2. Gemini AI response
         else if (rawText.startsWith("🤖 Gemini:")) {
-            row.classList.add("ai-msg");
+            row.className = "msg-row ai-row";
             const content = rawText.replace("🤖 Gemini:", "").trim();
             
             row.innerHTML = `
-                <div class="avatar" style="background-color: #5865f2;">AI</div>
-                <div class="msg-content">
-                    <div class="msg-header">
-                        <span class="msg-author" style="color: #5865f2;">Gemini AI</span>
-                        <span class="msg-time">${getFormattedTime()}</span>
-                    </div>
-                    <div class="msg-text">${content}</div>
+                <div class="gta-avatar" style="background: linear-gradient(135deg, #ff2a8d, #7000ff); box-shadow: 0 0 12px #ff2a8d;">AI</div>
+                <div class="msg-body">
+                    <span class="msg-author" style="color: #ff2a8d; text-shadow: 0 0 8px rgba(255,42,141,0.5);">🤖 GEMINI_AI</span>
+                    <div class="msg-bubble">${content}</div>
                 </div>
             `;
         } 
-        // 3. User Messages
+        // 3. User messages
         else {
             const splitIndex = rawText.indexOf(":");
             if (splitIndex !== -1) {
@@ -77,28 +74,22 @@ function join() {
                 const initials = getInitials(sender);
 
                 row.innerHTML = `
-                    <div class="avatar" style="background-color: ${color};">${initials}</div>
-                    <div class="msg-content">
-                        <div class="msg-header">
-                            <span class="msg-author" style="color: ${color};">${sender}</span>
-                            <span class="msg-time">${getFormattedTime()}</span>
-                        </div>
-                        <div class="msg-text">${text}</div>
+                    <div class="gta-avatar" style="background-color: ${color}; box-shadow: 0 0 10px ${color};">${initials}</div>
+                    <div class="msg-body">
+                        <span class="msg-author" style="color: ${color}; text-shadow: 0 0 6px ${color}88;">${sender.toUpperCase()}</span>
+                        <div class="msg-bubble">${text}</div>
                     </div>
                 `;
             } else {
-                row.classList.add("system-msg");
+                row.className = "msg-row system-row";
                 row.innerHTML = `<div class="system-pill">${rawText}</div>`;
             }
         }
 
         feed.appendChild(row);
-        
-        // Auto Scroll to Bottom
         feed.scrollTop = feed.scrollHeight;
     };
 
-    // Transition from login modal to chat dashboard
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("chatBox").classList.remove("hidden");
 }
