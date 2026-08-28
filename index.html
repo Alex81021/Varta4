@@ -3,53 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Varta Chat</title>
+    <title>Varta | Next-Gen Chat</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
 
-    <div class="background-decor">
-        <div class="glow glow-1"></div>
-        <div class="glow glow-2"></div>
-    </div>
-
-    <div id="loginBox" class="glass-card login-card">
-        <div class="brand">
-            <i class="fa-solid fa-bolt brand-icon"></i>
-            <h2>Varta Chat</h2>
-        </div>
-        <p class="subtitle">Enter your handle to start chatting</p>
+    <div id="loginBox" class="glass-panel">
+        <div class="logo">✨ Varta</div>
+        <p class="subtitle">Enter the conversation</p>
         <div class="input-group">
-            <input id="nameInput" placeholder="Your display name..." autocomplete="off">
+            <input id="nameInput" type="text" placeholder="Choose a username..." onkeydown="if(event.key==='Enter') join()">
             <button onclick="join()">
-                <span>Join Room</span>
-                <i class="fa-solid fa-arrow-right"></i>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
         </div>
     </div>
 
-    <div id="chatBox" class="glass-card chat-card hidden">
-        <header class="chat-header">
-            <div class="chat-title">
-                <i class="fa-solid fa-comments"></i>
-                <h3>Varta Room</h3>
-            </div>
-            <div id="userBadge" class="user-badge"></div>
-        </header>
-
-        <div class="chat-body">
-            <div id="messages" class="messages-container"></div>
+    <div id="chatBox" class="glass-panel hidden">
+        <div class="chat-header">
+            <div class="logo small">✨ Varta</div>
+            <div class="status">Live</div>
         </div>
-
-        <footer class="chat-footer">
-            <div class="input-container">
-                <input id="msgInput" placeholder="Message room or @gemini..." onkeydown="if(event.key==='Enter') send()">
-                <button onclick="send()" class="send-btn">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
+        
+        <div id="messages">
             </div>
-        </footer>
+        
+        <div class="chat-input-area">
+            <input id="msgInput" type="text" placeholder="Type a message or @gemini..." onkeydown="if(event.key==='Enter') send()">
+            <button class="send-btn" onclick="send()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </div>
     </div>
 
     <script src="script.js"></script>

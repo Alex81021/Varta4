@@ -1,13 +1,14 @@
 let ws, name;
 
-// Generates a deterministic, vibrant HSL color derived from the user's name string
-function getUserColor(str) {
+// Function to generate a unique, vibrant color based on a username string
+function getUserColor(username) {
     let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const hue = Math.abs(hash) % 360;
-    return `hsl(${hue}, 65%, 25%)`; // Dark vibrant color for message bubble background
+    // Convert to a hue (0-360) and use vibrant saturation/lightness
+    const hue = Math.abs(hash % 360);
+    return `hsl(${hue}, 80%, 40%)`; 
 }
 
 function join() {
@@ -17,51 +18,96 @@ function join() {
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     ws = new WebSocket(`${proto}//${location.host}/ws/${encodeURIComponent(name)}`);
 
-    document.getElementById("userBadge").textContent = `@${name}`;
-
     ws.onmessage = (e) => {
         const box = document.getElementById("messages");
-        const div = document.createElement("div");
-        const text = e.data;
+        const rawText = e.data;
+        
+        const wrapper = document.createElement("div");
+        wrapper.className = "msg-wrapper";
+        
+        const bubble = document.createElement("div");
+        const senderLabel = document.createElement("div");
+        senderLabel.className = "sender-name";
 
-        // System messages -> Centered Capsule
-        if (text.startsWith("📢") || text.startsWith("❌") || text.includes("thinking")) {
-            div.className = "msg system";
-            div.textContent = text;
+        // 1. Check for System Messages
+        if (rawText.startsWith("📢") || rawText.startsWith("❌") || rawText.includes("thinking") || rawText.startsWith("⚠️")) {
+            wrapper.classList.add("system-wrapper");
+            bubble.className = "msg system";
+            bubble.textContent = rawText;
+            wrapper.appendChild(bubble);
         } 
-        // Gemini AI -> Styled Left Bubble
-        else if (text.startsWith("🤖 **Gemini**:")) {
-            div.className = "msg ai";
-            div.innerHTML = `<span class="msg-author">🤖 Gemini</span>${text.replace("🤖 **Gemini**:", "").trim()}`;
+        // 2. Check for Gemini AI
+        else if (rawText.startsWith("🤖 Gemini:")) {
+            wrapper.classList.add("others-wrapper");
+            senderLabel.textContent = "✨ Gemini AI";
+            senderLabel.style.color = "#FF416C";
+            
+            bubble.className = "msg ai";
+            bubble.textContent = rawText.replace("🤖 Gemini:", "").trim();
+            
+            wrapper.appendChild(senderLabel);
+            wrapper.appendChild(bubble);
         } 
-        // Current User -> Right Blue Bubble
-        else if (text.startsWith(`${name}:`)) {
-            div.className = "msg mine";
-            div.textContent = text.substring(name.length + 1).trim();
-        } 
-        // Other Users -> Dynamic Colored Left Bubbles
+        // 3. Check for standard user messages
         else {
-            div.className = "msg others";
-            const parts = text.split(":");
-            const sender = parts[0];
-            const content = parts.slice(1).join(":").trim();
+            const splitIndex = rawText.indexOf(":");
+            if (splitIndex !== -1) {
+                const senderName = rawText.substring(0, splitIndex).trim();
+                const messageContent = rawText.substring(splitIndex + 1).trim();
+                
+                bubble.textContent = messageContent;
 
-            div.style.backgroundColor = getUserColor(sender);
-            div.innerHTML = `<span class="msg-author">${sender}</span>${content}`;
+                if (senderName === name) {
+                    // It's me
+                    wrapper.classList.add("mine-wrapper");
+                    bubble.className = "msg mine";
+                    wrapper.appendChild(bubble); // No name label needed for my own messages
+                } else {
+                    // It's someone else
+                    wrapper.classList.add("others-wrapper");
+                    senderLabel.textContent = senderName;
+                    
+                    // Apply dynamic color
+                    const userColor = getUserColor(senderName);
+                    senderLabel.style.color = userColor;
+                    
+                    bubble.className = "msg others";
+                    bubble.style.background = userColor;
+                    bubble.style.border = `1px solid ${userColor}`;
+                    
+                    wrapper.appendChild(senderLabel);
+                    wrapper.appendChild(bubble);
+                }
+            } else {
+                // Fallback if formatting breaks
+                bubble.className = "msg others";
+                bubble.textContent = rawText;
+                wrapper.appendChild(bubble);
+            }
         }
 
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
+        box.appendChild(wrapper);
+        
+        // Smooth scroll to bottom
+        box.scrollTo({
+            top: box.scrollHeight,
+            behavior: "smooth"
+        });
     };
 
+    // UI Transition
     document.getElementById("loginBox").classList.add("hidden");
     document.getElementById("chatBox").classList.remove("hidden");
+    setTimeout(() => {
+        document.getElementById("chatBox").style.opacity = 1;
+    }, 50);
 }
 
 function send() {
     const input = document.getElementById("msgInput");
-    if (input.value.trim() && ws) {
-        ws.send(input.value);
+    const val = input.value.trim();
+    if (val && ws) {
+        ws.send(val);
         input.value = "";
     }
 }
