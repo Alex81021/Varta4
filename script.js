@@ -1,13 +1,13 @@
 let ws, name;
 
-// Hash algorithm to generate a deterministic pastel color per user
+// Generates a deterministic, vibrant HSL color derived from the user's name string
 function getUserColor(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const h = Math.abs(hash) % 360;
-    return `hsl(${h}, 70%, 75%)`; // Pastel tone for dark theme readability
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 65%, 25%)`; // Dark vibrant color for message bubble background
 }
 
 function join() {
@@ -17,56 +17,41 @@ function join() {
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     ws = new WebSocket(`${proto}//${location.host}/ws/${encodeURIComponent(name)}`);
 
+    document.getElementById("userBadge").textContent = `@${name}`;
+
     ws.onmessage = (e) => {
         const box = document.getElementById("messages");
+        const div = document.createElement("div");
         const text = e.data;
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        // System messages -> Center Tag
+        // System messages -> Centered Capsule
         if (text.startsWith("📢") || text.startsWith("❌") || text.includes("thinking")) {
-            const sysDiv = document.createElement("div");
-            sysDiv.className = "system";
-            sysDiv.textContent = text;
-            box.appendChild(sysDiv);
+            div.className = "msg system";
+            div.textContent = text;
         } 
+        // Gemini AI -> Styled Left Bubble
+        else if (text.startsWith("🤖 **Gemini**:")) {
+            div.className = "msg ai";
+            div.innerHTML = `<span class="msg-author">🤖 Gemini</span>${text.replace("🤖 **Gemini**:", "").trim()}`;
+        } 
+        // Current User -> Right Blue Bubble
+        else if (text.startsWith(`${name}:`)) {
+            div.className = "msg mine";
+            div.textContent = text.substring(name.length + 1).trim();
+        } 
+        // Other Users -> Dynamic Colored Left Bubbles
         else {
-            const wrapper = document.createElement("div");
-            const header = document.createElement("div");
-            const bubble = document.createElement("div");
+            div.className = "msg others";
+            const parts = text.split(":");
+            const sender = parts[0];
+            const content = parts.slice(1).join(":").trim();
 
-            header.className = "msg-header";
-            bubble.className = "msg";
-
-            // Gemini AI -> Left with Gradient Border Styling
-            if (text.startsWith("🤖 **Gemini**:")) {
-                wrapper.className = "msg-wrapper ai";
-                header.innerHTML = `<span style="color: #c084fc;">🤖 Gemini AI</span> <span>${time}</span>`;
-                bubble.textContent = text.replace("🤖 **Gemini**:", "").trim();
-            } 
-            // My message -> Right
-            else if (text.startsWith(`${name}:`)) {
-                wrapper.className = "msg-wrapper mine";
-                header.innerHTML = `<span>${time}</span>`;
-                bubble.textContent = text.substring(name.length + 1).trim();
-            } 
-            // Other Users -> Left with Dynamic Dynamic User Colors
-            else {
-                wrapper.className = "msg-wrapper others";
-                const colonIndex = text.indexOf(":");
-                const sender = text.substring(0, colonIndex);
-                const msgContent = text.substring(colonIndex + 1).trim();
-
-                const userColor = getUserColor(sender);
-                header.innerHTML = `<span style="color: ${userColor}">${sender}</span> <span>${time}</span>`;
-                bubble.textContent = msgContent;
-            }
-
-            wrapper.appendChild(header);
-            wrapper.appendChild(bubble);
-            box.appendChild(wrapper);
+            div.style.backgroundColor = getUserColor(sender);
+            div.innerHTML = `<span class="msg-author">${sender}</span>${content}`;
         }
 
-        box.scrollTop = box.scrollHeight; // Auto scroll down
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
     };
 
     document.getElementById("loginBox").classList.add("hidden");
